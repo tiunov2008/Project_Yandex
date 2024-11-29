@@ -50,7 +50,7 @@
       <string>Шахматы</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="playButton">
      <property name="geometry">
       <rect>
        <x>60</x>
@@ -132,7 +132,7 @@
       </rect>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButton_3">
+    <widget class="QPushButton" name="startButton">
      <property name="geometry">
       <rect>
        <x>40</x>
@@ -146,21 +146,46 @@
      </property>
     </widget>
    </widget>
-   <widget class="QLabel" name="label_4">
+   <widget class="QLabel" name="chessBoardBg">
     <property name="enabled">
      <bool>true</bool>
     </property>
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>260</x>
       <y>100</y>
-      <width>500</width>
-      <height>500</height>
+      <width>480</width>
+      <height>480</height>
      </rect>
     </property>
     <property name="text">
      <string>TextLabel</string>
     </property>
+   </widget>
+   <widget class="QWidget" name="widget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>100</y>
+      <width>480</width>
+      <height>480</height>
+     </rect>
+    </property>
+    <widget class="QWidget" name="gridLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>481</width>
+       <height>481</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="chessGrid" rowstretch="0" columnstretch="0" rowminimumheight="0" columnminimumwidth="0">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -169,7 +194,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">

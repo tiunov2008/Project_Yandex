@@ -2,10 +2,20 @@ import sys
 
 from PyQt6 import uic, QtCore
 from PyQt6.QtGui import QPainter, QPixmap, QImage, QColor, QTransform, QColorTransform
-from PyQt6.QtWidgets import QApplication, QMainWindow, QDialog, QFileDialog, QButtonGroup
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, QFileDialog, QLabel, QWidget
 
 
-class MyPillow(QMainWindow):
+class Pawn(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.setMinimumSize(60, 60)
+        curr_image = QImage()
+        curr_image.load('Pb.png')
+        pixmap = QPixmap().fromImage(curr_image)
+        self.setPixmap(pixmap)
+
+
+class Chess(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('chess.ui', self)
@@ -15,24 +25,57 @@ class MyPillow(QMainWindow):
         self.pixmap = QPixmap().fromImage(self.curr_image)
         self.image.setPixmap(self.pixmap)'''
         self.timer.hide()
-    def channel(self, button):
-        if button.text() == 'R':
-            self.curr_image.colorTransformed(QColorTransform(QColor(255, 0, 0)))
-                    #self.curr_image.setPixelColor(x, y, QColor(255, *self.curr_image.pixelColor(x, y).getRgb()[1:]))
-        if button.text() == 'G':
-            for x in range(self.curr_image.width() - 1):
-                for y in range(self.curr_image.height() - 1):
-                    self.curr_image.setPixelColor(x, y, QColor(self.curr_image.pixelColor(x, y).getRgb()[0], 255, self.curr_image.pixelColor(x, y).getRgb()[2]))
-        if button.text() == 'B':
-            for x in range(self.curr_image.width() - 1):
-                for y in range(self.curr_image.height() - 1):
-                    self.curr_image.setPixelColor(x, y, QColor(*self.curr_image.pixelColor(x, y).getRgb()[:2], 255))
-        self.pixmap = QPixmap().fromImage(self.curr_image)
-        self.image.setPixmap(self.pixmap)
-    def new_game():
-        
+        self.chessBoardBg.hide()
+        self.playButton.clicked.connect(self.showTimer)
+        self.startButton.clicked.connect(self.newGame)
+        self.chessGrid.setSpacing(0)
+        '''self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
+                      ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      ['Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw'],
+                      ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]'''
+        self.board = [[0, 0, 0, 0, 0, 0, 0, 0],
+                      ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0]]
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] != 0:
+                    self.chessGrid.addWidget(Pawn(), i, j)
+                else:
+                    self.chessGrid.addWidget(QWidget(), i, j)
+        self.newGame()
+    def showTimer(self):
+        self.timer.show()
+        self.main.hide()
+    def newGame(self):
+        self.main.hide()
+        self.timer.hide()
+        self.chessBoardBg.show()
+        curr_image = QImage()
+        curr_image.load('chessbg.png')
+        pixmap = QPixmap().fromImage(curr_image)
+        self.chessBoardBg.setPixmap(pixmap)
+    def move(self, x1, y1, x2, y2):
+        pass
+
+    def updateBoard(self):
+        pass
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = MyPillow()
+    ex = Chess()
     ex.show()
     sys.exit(app.exec())
