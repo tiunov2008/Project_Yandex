@@ -180,29 +180,9 @@
        <height>481</height>
       </rect>
      </property>
-     <layout class="QGridLayout" name="chessGrid" rowstretch="0" columnstretch="0" rowminimumheight="0" columnminimumwidth="0">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-     </layout>
+     <layout class="QGridLayout" name="chessGrid"/>
     </widget>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1000</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menu">
-    <property name="title">
-     <string>Меню</string>
-    </property>
-   </widget>
-   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
