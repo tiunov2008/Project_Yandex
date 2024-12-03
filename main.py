@@ -107,9 +107,9 @@ class ChessPage(QWidget):
             self.endGame('b')
     def newGame(self):
         self.game = True
-        if self.time != False:
-            self.blackTimer.setText(f'{self.btime // 60}:{self.btime % 60}')
-            self.whiteTimer.setText(f'{self.wtime // 60}:{self.wtime % 60}')
+        if self.time != 0:
+            self.blackTimer.setText(f'{self.time}:00')
+            self.whiteTimer.setText(f'{self.time}:00')
         else:
             self.blackTimer.hide()
             self.whiteTimer.hide()
@@ -128,10 +128,10 @@ class ChessPage(QWidget):
         for i in range(8):
             for j in range(8):
                 if self.board[i][j] != 0:
-                    print(1)
                     self.chessGrid.addWidget(ChessPiece(self.board[i][j]), i, j)
                 else:
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
+        print(self.time)
         if self.time != 0:
             self.startTimer()
     def canBishop(self, x1, y1, x2, y2):
