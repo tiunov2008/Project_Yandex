@@ -54,6 +54,7 @@ class ChessPage(QWidget):
         uic.loadUi('newchess.ui', self)
         self.chessGrid.setSpacing(0)
         self.turn = 'w'
+        self.time = time
         self.selectedField = ()
         self.game = False
         self.newGame()
@@ -85,9 +86,9 @@ class ChessPage(QWidget):
         self.board[p2[0]][p2[1]] = a
         self.chessGrid.itemAtPosition(p1[0], p1[1]).widget().draw(0)
         self.chessGrid.itemAtPosition(p2[0], p2[1]).widget().draw(a)
-    def startTimer(self, time):
-        self.btime = time * 60
-        self.wtime = time * 60
+    def startTimer(self):
+        self.btime = self.time * 60
+        self.wtime = self.time * 60
         self.bTimer = QTimer(self)
         self.wTimer = QTimer(self)
         self.bTimer.start(1000)
@@ -106,7 +107,7 @@ class ChessPage(QWidget):
             self.endGame('b')
     def newGame(self):
         self.game = True
-        if self.btime != False:
+        if self.time != False:
             self.blackTimer.setText(f'{self.btime // 60}:{self.btime % 60}')
             self.whiteTimer.setText(f'{self.wtime // 60}:{self.wtime % 60}')
         else:
@@ -127,10 +128,11 @@ class ChessPage(QWidget):
         for i in range(8):
             for j in range(8):
                 if self.board[i][j] != 0:
+                    print(1)
                     self.chessGrid.addWidget(ChessPiece(self.board[i][j]), i, j)
                 else:
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
-        if time != 0:
+        if self.time != 0:
             self.startTimer()
     def canBishop(self, x1, y1, x2, y2):
         if abs(x2 - x1) != abs(y2 - y1):
@@ -203,10 +205,7 @@ class Chess(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setCentralWidget(MainPage(self))
-        
-        
-
-    
+        self.setFixedSize(1000, 800)
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Chess()

@@ -76,6 +76,10 @@
     <string>TextLabel</string>
    </property>
   </widget>
+  <zorder>chessBoardBg</zorder>
+  <zorder>blackTimer</zorder>
+  <zorder>whiteTimer</zorder>
+  <zorder>widget</zorder>
  </widget>
  <resources/>
  <connections/>
