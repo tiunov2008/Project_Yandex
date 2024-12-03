@@ -95,6 +95,10 @@ class Chess(QMainWindow):
         else:
             self.wtime -= 1
             self.whiteTimer.setText(f'{self.wtime // 60}:{self.wtime % 60}')
+        if self.wtime <= 0:
+            self.endGame('w')
+        elif self.btime <= 0:
+            self.endGame('b')
     def movePiece(self, p1, p2):
         a = self.board[p1[0]][p1[1]]
         self.board[p1[0]][p1[1]] = 0
@@ -189,6 +193,8 @@ class Chess(QMainWindow):
             if (abs(x1 - x2) == 2 and abs(y1 - y2) == 1) or (abs(x1 - x2) == 1 and abs(y1 - y2) == 2):
                 return True
         return False
+    def endGame(self, winner):
+        pass
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Chess()
