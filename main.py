@@ -3,7 +3,7 @@ import sys
 from PyQt6 import uic
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QImage, QColor, QPainter
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget
 
 class ChessPiece(QLabel):
     def __init__(self, name):
@@ -35,20 +35,28 @@ class ChessPiece(QLabel):
             self.setPixmap(pixmap)
     def clearSelect(self):
         self.draw(self.name)
-class Chess(QMainWindow):
-    def __init__(self):
+class TimerPage(QWidget):
+    def __init__(self, MainWindow):
         super().__init__()
-        uic.loadUi('chess.ui', self)
-        self.timer.hide()
-        self.chessBoardBg.hide()
-        self.blackTimer.hide()
-        self.whiteTimer.hide()
-        self.playButton.clicked.connect(self.showTimer)
+        uic.loadUi('timerpage.ui', self)
+        self.MainWindow = MainWindow
+        self.playButton.clicked.connect(self.checkTimer)
+    def checkTimer(self):
+        text = self.timerInput.text()
+        if text != '' and text.isnumeric():
+            self.MainWindow.setCentralWidget(ChessPage(int(text)))
+        else:
+            self.MainWindow.setCentralWidget(ChessPage(0))
+    
+class ChessPage(QWidget):
+    def __init__(self, time):
+        super().__init__()
+        uic.loadUi('newchess.ui', self)
         self.chessGrid.setSpacing(0)
         self.turn = 'w'
         self.selectedField = ()
         self.game = False
-
+        self.newGame()
     def mousePressEvent(self, event):
         if self.game:
             pos = event.pos()
@@ -70,24 +78,21 @@ class Chess(QMainWindow):
             self.turn = 'b'
         else:
             self.turn = 'w'
-    def showTimer(self):
-        self.timer.show()
-        self.startButton.clicked.connect(self.checkTimer)
-        self.main.hide()
-    def checkTimer(self):
-        text = self.timerText.text()
-        if text != '' and text.isnumeric():
-            self.btime = int(text) * 60
-            self.wtime = int(text) * 60
-            self.bTimer = QTimer(self)
-            self.wTimer = QTimer(self)
-            self.bTimer.start(1000)
-            self.wTimer.start(1000)
-            self.wTimer.timeout.connect(self.updateTimer)
-            self.newGame()
-        else:
-            self.btime = False
-            self.newGame()
+    
+    def movePiece(self, p1, p2):
+        a = self.board[p1[0]][p1[1]]
+        self.board[p1[0]][p1[1]] = 0
+        self.board[p2[0]][p2[1]] = a
+        self.chessGrid.itemAtPosition(p1[0], p1[1]).widget().draw(0)
+        self.chessGrid.itemAtPosition(p2[0], p2[1]).widget().draw(a)
+    def startTimer(self, time):
+        self.btime = time * 60
+        self.wtime = time * 60
+        self.bTimer = QTimer(self)
+        self.wTimer = QTimer(self)
+        self.bTimer.start(1000)
+        self.wTimer.start(1000)
+        self.wTimer.timeout.connect(self.updateTimer)
     def updateTimer(self):
         if self.turn == 'b':
             self.btime -= 1
@@ -99,22 +104,14 @@ class Chess(QMainWindow):
             self.endGame('w')
         elif self.btime <= 0:
             self.endGame('b')
-    def movePiece(self, p1, p2):
-        a = self.board[p1[0]][p1[1]]
-        self.board[p1[0]][p1[1]] = 0
-        self.board[p2[0]][p2[1]] = a
-        self.chessGrid.itemAtPosition(p1[0], p1[1]).widget().draw(0)
-        self.chessGrid.itemAtPosition(p2[0], p2[1]).widget().draw(a)
     def newGame(self):
         self.game = True
-        self.main.hide()
-        self.timer.hide()
-        self.chessBoardBg.show()
         if self.btime != False:
-            self.blackTimer.show()
-            self.whiteTimer.show()
             self.blackTimer.setText(f'{self.btime // 60}:{self.btime % 60}')
             self.whiteTimer.setText(f'{self.wtime // 60}:{self.wtime % 60}')
+        else:
+            self.blackTimer.hide()
+            self.whiteTimer.hide()
         curr_image = QImage()
         curr_image.load('chessbg.png')
         pixmap = QPixmap().fromImage(curr_image)
@@ -133,6 +130,8 @@ class Chess(QMainWindow):
                     self.chessGrid.addWidget(ChessPiece(self.board[i][j]), i, j)
                 else:
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
+        if time != 0:
+            self.startTimer()
     def canBishop(self, x1, y1, x2, y2):
         if abs(x2 - x1) != abs(y2 - y1):
             return False
@@ -195,6 +194,19 @@ class Chess(QMainWindow):
         return False
     def endGame(self, winner):
         pass
+class MainPage(QWidget):
+    def __init__(self, MainWindow):
+        super().__init__()
+        uic.loadUi('mainpage.ui', self)
+        self.playButton.clicked.connect(lambda: MainWindow.setCentralWidget(TimerPage(MainWindow)))
+class Chess(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setCentralWidget(MainPage(self))
+        
+        
+
+    
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Chess()
