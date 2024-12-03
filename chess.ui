@@ -122,7 +122,7 @@
       <string>Введите время в минутах:</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit">
+    <widget class="QLineEdit" name="timerText">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -183,6 +183,38 @@
      <layout class="QGridLayout" name="chessGrid"/>
     </widget>
    </widget>
+   <widget class="QLabel" name="whiteTimer">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>480</y>
+      <width>81</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="blackTimer">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>150</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <zorder>chessBoardBg</zorder>
+   <zorder>widget</zorder>
+   <zorder>timer</zorder>
+   <zorder>main</zorder>
+   <zorder>whiteTimer</zorder>
+   <zorder>blackTimer</zorder>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
