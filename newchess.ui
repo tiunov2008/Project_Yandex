@@ -76,10 +76,32 @@
     <string>TextLabel</string>
    </property>
   </widget>
+  <widget class="QWidget" name="promotePawnW" native="true">
+   <property name="geometry">
+    <rect>
+     <x>380</x>
+     <y>300</y>
+     <width>240</width>
+     <height>80</height>
+    </rect>
+   </property>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>241</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="promotePawnBox"/>
+   </widget>
+  </widget>
   <zorder>chessBoardBg</zorder>
   <zorder>blackTimer</zorder>
   <zorder>whiteTimer</zorder>
   <zorder>widget</zorder>
+  <zorder>promotePawnW</zorder>
  </widget>
  <resources/>
  <connections/>

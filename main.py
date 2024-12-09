@@ -1,9 +1,9 @@
 import sys
 
 from PyQt6 import uic
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QPixmap, QImage, QColor, QPainter
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QPixmap, QImage, QColor, QIcon
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QPushButton, QButtonGroup
 
 class ChessPiece(QLabel):
     def __init__(self, name):
@@ -35,6 +35,13 @@ class ChessPiece(QLabel):
             self.setPixmap(pixmap)
     def clearSelect(self):
         self.draw(self.name)
+class ChessPieceBtn(QPushButton):
+    def __init__(self, name):
+        super().__init__()
+        self.setIcon(QIcon(name))
+        self.setMinimumSize(60, 60)
+        self.setIconSize(QSize(60, 60))
+
 class TimerPage(QWidget):
     def __init__(self, MainWindow):
         super().__init__()
@@ -47,7 +54,6 @@ class TimerPage(QWidget):
             self.MainWindow.setCentralWidget(ChessPage(int(text)))
         else:
             self.MainWindow.setCentralWidget(ChessPage(0))
-    
 class ChessPage(QWidget):
     def __init__(self, time):
         super().__init__()
@@ -86,6 +92,26 @@ class ChessPage(QWidget):
         self.board[p2[0]][p2[1]] = a
         self.chessGrid.itemAtPosition(p1[0], p1[1]).widget().draw(0)
         self.chessGrid.itemAtPosition(p2[0], p2[1]).widget().draw(a)
+        if a[0] == 'P' and (p2[0] == 0 or p2[0] == 7):
+            self.promotePawn(*p2)
+    def promotePawn(self, x, y):
+        self.promotePawnW.show()
+        self.promotePawnGroup = QButtonGroup()
+        promotePawnList = ['Rw', 'Nw', 'Bw', 'Qw']
+        for i in range(4):
+            btn = ChessPieceBtn(promotePawnList[i])
+            self.promotePawnBox.addWidget(btn)
+            self.promotePawnGroup.addButton(btn)
+            self.promotePawnGroup.setId(btn, i)
+        self.promotePawnGroup.buttonClicked.connect(lambda g: self.promote(g, x, y))
+    def promote(self, btn, x, y):
+        promotePawnList = ['Rw', 'Nw', 'Bw', 'Qw']
+        a = self.promotePawnGroup.id(btn)
+        self.board[x][y] = 0
+        self.board[x][y] = promotePawnList[a]
+        self.chessGrid.itemAtPosition(x, y).widget().draw(0)
+        self.chessGrid.itemAtPosition(x, y).widget().draw(promotePawnList[a])
+        self.promotePawnW.hide()
     def startTimer(self):
         self.btime = self.time * 60
         self.wtime = self.time * 60
@@ -106,6 +132,8 @@ class ChessPage(QWidget):
         elif self.btime <= 0:
             self.endGame('b')
     def newGame(self):
+        self.promotePawnW.hide()
+
         self.game = True
         if self.time != 0:
             self.blackTimer.setText(f'{self.time}:00')
@@ -118,7 +146,7 @@ class ChessPage(QWidget):
         pixmap = QPixmap().fromImage(curr_image)
         self.chessBoardBg.setPixmap(pixmap)
         self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
-                        ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
+                        ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pw', 'Pb'],
                         [0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -131,7 +159,6 @@ class ChessPage(QWidget):
                     self.chessGrid.addWidget(ChessPiece(self.board[i][j]), i, j)
                 else:
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
-        print(self.time)
         if self.time != 0:
             self.startTimer()
     def canBishop(self, x1, y1, x2, y2):
@@ -205,7 +232,7 @@ class Chess(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setCentralWidget(MainPage(self))
-        self.setFixedSize(1000, 800)
+        self.resize(1000, 800)
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Chess()
