@@ -1,9 +1,10 @@
 import sys
-
+import sqlite3
 from PyQt6 import uic
 from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtGui import QPixmap, QImage, QColor, QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QPushButton, QButtonGroup
+from PyQt6.QtSql import (QSqlDatabase, QSqlQuery)
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QPushButton, QTableWidgetItem, QButtonGroup, QFileDialog
 
 class ChessPiece(QLabel):
     def __init__(self, name):
@@ -41,7 +42,49 @@ class ChessPieceBtn(QPushButton):
         self.setIcon(QIcon(name))
         self.setMinimumSize(60, 60)
         self.setIconSize(QSize(60, 60))
-
+class GamesPage(QWidget):
+    def __init__(self, MainWindow):
+        super().__init__()
+        uic.loadUi('gamespage.ui', self)
+        self.MainWindow = MainWindow
+        #self.runGame.clicked.connect(self.MainWindow.setCentralWidget(ChessPage(0, [123])))
+        self.con = sqlite3.connect('chess.db')
+        try:
+            self.con.execute("""CREATE TABLE chess
+                     (player1, player2, winner, path)""")
+        except:
+            rows = self.con.execute('''SELECT * FROM chess ''').fetchall()
+            for row in rows:
+                inx = rows.index(row)
+                self.table.insertRow(inx)
+                self.table.setItem(inx, 0, QTableWidgetItem(row[1]))
+                self.table.setItem(inx, 1, QTableWidgetItem(row[2]))
+                self.table.setItem(inx, 2, QTableWidgetItem(row[3]))
+        self.addGame.clicked.connect(self.addFile)
+        self.deleteGame.clicked.connect(self.deleteFile)
+        self.table.setColumnCount(3)
+        self.table.setRowCount(1)
+        self.table.setHorizontalHeaderLabels(["Player 1", "Player 2", "Winner"])
+         
+    def addFile(self):
+        '''name = QFileDialog.getOpenFileName(
+            self,
+            "Open File",
+            "",
+            "PGN Files (*.pgn)",
+        )
+        pgn = open(name[0])
+        game = chess.pgn.read_game(pgn)
+        print(game.headers)'''
+        rowPosition = self.table.rowCount()
+        self.table.insertRow(rowPosition)
+        self.table.setItem(rowPosition, 0, QTableWidgetItem("0"))
+        self.table.setItem(rowPosition, 1, QTableWidgetItem("1"))
+        self.table.setItem(rowPosition, 2, QTableWidgetItem("0"))
+        print(self.con.execute("""INSERT INTO chess (player1, player2, winner, path) values(0, 1, 0, '/4324')"""))
+        self.con.execute("""INSERT INTO chess (player1, player2, winner, path) values(0, 1, 0, '/4324')""")
+    def deleteFile(self):
+        self.table.removeRow(self.table.currentRow())
 class TimerPage(QWidget):
     def __init__(self, MainWindow):
         super().__init__()
@@ -55,7 +98,7 @@ class TimerPage(QWidget):
         else:
             self.MainWindow.setCentralWidget(ChessPage(0))
 class ChessPage(QWidget):
-    def __init__(self, time):
+    def __init__(self, time, history=False):
         super().__init__()
         uic.loadUi('newchess.ui', self)
         self.chessGrid.setSpacing(0)
@@ -63,6 +106,16 @@ class ChessPage(QWidget):
         self.time = time
         self.selectedField = ()
         self.game = False
+        if history:
+            print(history)
+        self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
+            ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            ['Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw'],
+            ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]
         self.newGame()
     def mousePressEvent(self, event):
         if self.game:
@@ -145,14 +198,7 @@ class ChessPage(QWidget):
         curr_image.load('chessbg.png')
         pixmap = QPixmap().fromImage(curr_image)
         self.chessBoardBg.setPixmap(pixmap)
-        self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
-                        ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pw', 'Pb'],
-                        [0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0],
-                        ['Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw'],
-                        ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]
+
         for i in range(8):
             for j in range(8):
                 if self.board[i][j] != 0:
@@ -228,6 +274,8 @@ class MainPage(QWidget):
         super().__init__()
         uic.loadUi('mainpage.ui', self)
         self.playButton.clicked.connect(lambda: MainWindow.setCentralWidget(TimerPage(MainWindow)))
+        self.gamesManager.clicked.connect(lambda: MainWindow.setCentralWidget(GamesPage(MainWindow)))
+
 class Chess(QMainWindow):
     def __init__(self):
         super().__init__()
