@@ -1,11 +1,10 @@
 import sys
-import sqlite3
 from PyQt6 import uic
 from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtGui import QPixmap, QImage, QColor, QIcon
-from PyQt6.QtSql import (QSqlDatabase, QSqlQuery)
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QPushButton, QTableWidgetItem, QButtonGroup, QFileDialog
-
+from chesslogic import ChessLogic
+from gamespage import GamesPage
 class ChessPiece(QLabel):
     def __init__(self, name):
         super().__init__()
@@ -42,49 +41,7 @@ class ChessPieceBtn(QPushButton):
         self.setIcon(QIcon(name))
         self.setMinimumSize(60, 60)
         self.setIconSize(QSize(60, 60))
-class GamesPage(QWidget):
-    def __init__(self, MainWindow):
-        super().__init__()
-        uic.loadUi('gamespage.ui', self)
-        self.MainWindow = MainWindow
-        #self.runGame.clicked.connect(self.MainWindow.setCentralWidget(ChessPage(0, [123])))
-        self.con = sqlite3.connect('chess.db')
-        try:
-            self.con.execute("""CREATE TABLE chess
-                     (player1, player2, winner, path)""")
-        except:
-            rows = self.con.execute('''SELECT * FROM chess ''').fetchall()
-            for row in rows:
-                inx = rows.index(row)
-                self.table.insertRow(inx)
-                self.table.setItem(inx, 0, QTableWidgetItem(row[1]))
-                self.table.setItem(inx, 1, QTableWidgetItem(row[2]))
-                self.table.setItem(inx, 2, QTableWidgetItem(row[3]))
-        self.addGame.clicked.connect(self.addFile)
-        self.deleteGame.clicked.connect(self.deleteFile)
-        self.table.setColumnCount(3)
-        self.table.setRowCount(1)
-        self.table.setHorizontalHeaderLabels(["Player 1", "Player 2", "Winner"])
-         
-    def addFile(self):
-        '''name = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "",
-            "PGN Files (*.pgn)",
-        )
-        pgn = open(name[0])
-        game = chess.pgn.read_game(pgn)
-        print(game.headers)'''
-        rowPosition = self.table.rowCount()
-        self.table.insertRow(rowPosition)
-        self.table.setItem(rowPosition, 0, QTableWidgetItem("0"))
-        self.table.setItem(rowPosition, 1, QTableWidgetItem("1"))
-        self.table.setItem(rowPosition, 2, QTableWidgetItem("0"))
-        print(self.con.execute("""INSERT INTO chess (player1, player2, winner, path) values(0, 1, 0, '/4324')"""))
-        self.con.execute("""INSERT INTO chess (player1, player2, winner, path) values(0, 1, 0, '/4324')""")
-    def deleteFile(self):
-        self.table.removeRow(self.table.currentRow())
+
 class TimerPage(QWidget):
     def __init__(self, MainWindow):
         super().__init__()
@@ -97,17 +54,28 @@ class TimerPage(QWidget):
             self.MainWindow.setCentralWidget(ChessPage(int(text)))
         else:
             self.MainWindow.setCentralWidget(ChessPage(0))
-class ChessPage(QWidget):
-    def __init__(self, time, history=False):
+class ChessPage(QWidget, ChessLogic):
+    def __init__(self, time, game=False):
         super().__init__()
         uic.loadUi('newchess.ui', self)
         self.chessGrid.setSpacing(0)
         self.turn = 'w'
         self.time = time
         self.selectedField = ()
-        self.game = False
-        if history:
-            print(history)
+        self.alph = 'abcdefgh'
+        self.move_count = 0
+        if game:
+            self.gameGoing = False
+            self.moves = []
+            moves_pgn = game.mainline_moves()
+            for move in moves_pgn:
+                move = move.uci()
+                print(self.alph.index(move[0]))
+                self.moves.append(((8 - int(move[1]), self.alph.index(move[0])), (8 - int(move[3]), self.alph.index(move[2]))))
+            self.nextBtn.clicked.connect(self.nextMove)
+        else:
+            self.gameGoing = True
+            self.nav.hide()
         self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
             ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -118,7 +86,7 @@ class ChessPage(QWidget):
             ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]
         self.newGame()
     def mousePressEvent(self, event):
-        if self.game:
+        if self.gameGoing:
             pos = event.pos()
             cords = ((pos.y() - 100) // 60, (pos.x() - 260) // 60)
             if event.button() == Qt.MouseButton.LeftButton and 0 <= cords[0] <= 7 and 0 <= cords[1] <= 7 and self.selectedField == () and self.board[cords[0]][cords[1]] != 0 and self.board[cords[0]][cords[1]][1] == self.turn:
@@ -129,23 +97,54 @@ class ChessPage(QWidget):
                     self.movePiece(self.selectedField, cords)
                     self.next_turn()
                     self.chessGrid.itemAtPosition(self.selectedField[0], self.selectedField[1]).widget().draw(0)
+                    self.isCheckMate()
                 else:
                     self.chessGrid.itemAtPosition(self.selectedField[0], self.selectedField[1]).widget().clearSelect()
                 self.selectedField = ()
-        
+    def toChessCords(self, i, j):
+        return (j + 1, 8 - i)
+    def toIJCords(self, x, y):
+        return (8 - y, x - 1)
+    def isInDanger(self, i1, j1):
+        for i in range(8):
+            for j in range(8):
+                if self.canMove((j, i), (i1, j1)):
+                    return True
+    def isCheckMate(self):
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] == 'Kb':
+                    Kb = (i, j)
+                if self.board[i][j] == 'Kw':
+                    Kw = (i, j)
+        print(self.isInDanger(*Kb))
+        if self.isInDanger(*Kb):
+            print('Шах черным')
+            for i in range(Kb[0] - 1, Kb[0] + 1):
+                for j in range(Kb[1] - 1, Kb[1] + 1):
+                    print(self.board[i][j])
+                    if not (self.board[i][j] != 0 and self.isInDanger(i, j)):
+                        return False
+            print('Шам и Мат черный')
+        if self.isInDanger(*Kw):
+            print('Шах белым')
+                    
     def next_turn(self):
         if self.turn == 'w':
             self.turn = 'b'
         else:
             self.turn = 'w'
-    
+    def nextMove(self):
+        if self.move_count < len(self.moves):
+            self.movePiece(*self.moves[self.move_count])
+            self.move_count += 1
     def movePiece(self, p1, p2):
         a = self.board[p1[0]][p1[1]]
         self.board[p1[0]][p1[1]] = 0
         self.board[p2[0]][p2[1]] = a
         self.chessGrid.itemAtPosition(p1[0], p1[1]).widget().draw(0)
         self.chessGrid.itemAtPosition(p2[0], p2[1]).widget().draw(a)
-        if a[0] == 'P' and (p2[0] == 0 or p2[0] == 7):
+        if a != 0 and a[0] == 'P' and (p2[0] == 0 or p2[0] == 7):
             self.promotePawn(*p2)
     def promotePawn(self, x, y):
         self.promotePawnW.show()
@@ -186,7 +185,6 @@ class ChessPage(QWidget):
             self.endGame('b')
     def newGame(self):
         self.promotePawnW.hide()
-
         self.game = True
         if self.time != 0:
             self.blackTimer.setText(f'{self.time}:00')
@@ -198,7 +196,6 @@ class ChessPage(QWidget):
         curr_image.load('chessbg.png')
         pixmap = QPixmap().fromImage(curr_image)
         self.chessBoardBg.setPixmap(pixmap)
-
         for i in range(8):
             for j in range(8):
                 if self.board[i][j] != 0:
@@ -207,66 +204,7 @@ class ChessPage(QWidget):
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
         if self.time != 0:
             self.startTimer()
-    def canBishop(self, x1, y1, x2, y2):
-        if abs(x2 - x1) != abs(y2 - y1):
-            return False
-        i = (y2 - y1) // abs(y2 - y1)
-        j = (x2 - x1) // abs(x2 - x1)
-        x1 += j
-        y1 += i
-        while x1 != x2 and y1 != y2:
-            if self.board[y1][x1] != 0:
-                return False
-            x1 += j
-            y1 += i
-        return True
-    def canRook(self, x1, y1, x2, y2):
-        if x2 == x1:
-            i = (y2 - y1) // abs(y2 - y1)
-            j = 0
-        elif y2 == y1:
-            j = (x2 - x1) // abs(x2 - x1)
-            i = 0
-        else:
-            return False
-        x1 += j
-        y1 += i
-        while x1 != x2 or y1 != y2:
-            if self.board[y1][x1] != 0:
-                return False
-            x1 += j
-            y1 += i
-        return True
-    def canMove(self, p1, p2):
-        x1 = p1[1]
-        y1 = p1[0]
-        x2 = p2[1]
-        y2 = p2[0]
-        p = self.board[y1][x1]
-        if p == 0 or p[1] != self.turn or (self.board[y2][x2] != 0 and self.board[y2][x2][1] == self.turn) or (x1 == x2 and y1 == y2):
-            return False
-        elif p[0] == 'P':
-            if self.board[y2][x2] == 0 and x1 == x2 and\
-                ((p[1] == 'w' and (y1 - y2 == 1 or (y1 == 6 and y1 - y2 == 2))) or \
-                (p[1] == 'b' and (y2 - y1 == 1 or (y1 == 1 and y2 - y1 == 2)))):
-                return True
-            if self.board[y2][x2] != 0 and abs(x1 - x2) == 1 and\
-                ((p[1] == 'w' and y1 - y2 == 1) or \
-                (p[1] == 'b' and y2 - y1 == 1)):
-                return True
-        elif p[0] == 'R':
-            return self.canRook(x1, y1, x2, y2)
-        elif p[0] == 'B':
-            return self.canBishop(x1, y1, x2, y2)
-        elif p[0] == 'Q':
-            return self.canRook(x1, y1, x2, y2) or self.canBishop(x1, y1, x2, y2)
-        elif p[0] == 'K':
-            if abs(x1 - x2) <= 1 and abs(y1 - y2) <= 1:
-                return True
-        elif p[0] == 'N':
-            if (abs(x1 - x2) == 2 and abs(y1 - y2) == 1) or (abs(x1 - x2) == 1 and abs(y1 - y2) == 2):
-                return True
-        return False
+
     def endGame(self, winner):
         pass
 class MainPage(QWidget):
