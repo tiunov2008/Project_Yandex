@@ -4,8 +4,8 @@ import chess
 from PyQt6 import uic
 from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtGui import QPixmap, QImage, QColor, QIcon
-from PyQt6.QtWidgets import QApplication, QLineEdit, QDialogButtonBox, QVBoxLayout, QLabel, QWidget, QPushButton, QDialog, QButtonGroup, QFileDialog
-from chesslogic import ChessLogic
+from PyQt6.QtWidgets import QLineEdit, QDialogButtonBox, QVBoxLayout, QLabel, QWidget, QPushButton, QDialog, QButtonGroup, QFileDialog
+
 class ChessPiece(QLabel):
     def __init__(self, name):
         super().__init__()
@@ -58,49 +58,47 @@ class SaveGameDialog(QDialog):
         self.buttonBox.rejected.connect(self.reject)
 
         layout = QVBoxLayout()
-        if winner == 'w':
+        if winner == 'w' or winner == 'White':
             message1 = QLabel("Белые победили!")
-        elif winner == 'b':
+        elif winner == 'b' or winner == 'Black':
             message1 = QLabel("Черные победили!")
         else:
             message1 = QLabel("Ничья!")
-        message2 = QLabel("Вы хотите сохранить игру?")
-        layout.addWidget(message1)  
-        layout.addWidget(label1)  
-        layout.addWidget(self.player1)
-        layout.addWidget(label2)  
-        layout.addWidget(self.player2)
-        layout.addWidget(message2)
+        layout.addWidget(message1) 
+        if len(winner) == 1:
+            message2 = QLabel("Вы хотите сохранить игру?")
+            layout.addWidget(label1)  
+            layout.addWidget(self.player1)
+            layout.addWidget(label2)  
+            layout.addWidget(self.player2)
+            layout.addWidget(message2)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
-class ChessPage(QWidget, ChessLogic):
-    def __init__(self, time, loadgame=False):
+class ChessPage(QWidget):
+    def __init__(self, time, loadgame=False, winner=0):
         super().__init__()
         uic.loadUi('newchess.ui', self)
         self.chessGrid.setSpacing(0)
         self.turn = 'w'
+        self.winner = winner
         self.time = time
         self.selectedField = ()
         self.alph = 'abcdefgh'
-        self.move_count = 1
-        self.moves = ''
+        self.moves = []
         self.cmove = ''
-        self.game = chess.Board()
         if loadgame:
             self.gameGoing = False
             self.loadgame = loadgame
             self.nextBtn.clicked.connect(self.nextMove)
+            self.endBtn.clicked.connect(self.lastMove)
+            self.startBtn.clicked.connect(self.newGame)
+            self.backBtn.clicked.connect(self.prevMove)
+            for i in self.loadgame.mainline_moves():
+                self.moves.append(i.uci())
         else:
             self.gameGoing = True
             self.nav.hide()
-        self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
-            ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            ['Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw'],
-            ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]
+        
         self.newGame()
     def check_move_from_to_tentative(self, from_square, to_square):
         for m in self.game.legal_moves:
@@ -157,10 +155,24 @@ class ChessPage(QWidget, ChessLogic):
         else:
             self.turn = 'w'
     def nextMove(self):
-        self.move_count = 0
-        for i in self.loadgame.mainline_moves():
-            self.doMove(i.uci())
-        self.move_count += 1
+        if self.move_count < len(self.moves):
+            self.doMove(self.moves[self.move_count])
+            self.move_count += 1
+        else:
+            dlg = SaveGameDialog(self.winner)
+            dlg.exec()
+    def prevMove(self):
+        a = self.move_count
+        self.newGame()
+        for i in range(a - 1):
+            self.doMove(self.moves[i])
+        self.move_count = a - 1
+    def lastMove(self):
+        for i in range(self.move_count, len(self.moves)):
+            self.doMove(self.moves[i])
+        self.move_count = len(self.moves)
+        dlg = SaveGameDialog(self.winner)
+        dlg.exec()
     def getMove(self, p1, p2):
         return f'{self.toChessCords(p1[0], p1[1])}{self.toChessCords(p2[0], p2[1])}'
     def movePiece(self, p1, p2):
@@ -208,6 +220,16 @@ class ChessPage(QWidget, ChessLogic):
         elif self.btime <= 0:
             self.endGame('w')
     def newGame(self):
+        self.board = [['Rb', 'Nb', 'Bb', 'Qb', 'Kb', 'Bb', 'Nb', 'Rb'],
+            ['Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb', 'Pb'],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            ['Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw', 'Pw'],
+            ['Rw', 'Nw', 'Bw', 'Qw', 'Kw', 'Bw', 'Nw', 'Rw']]
+        self.move_count = 0
+        self.game = chess.Board()
         self.promotePawnW.hide()
         self.promotePawnGroup = QButtonGroup()
         promotePawnList = ['Rw', 'Nw', 'Bw', 'Qw']
@@ -228,13 +250,19 @@ class ChessPage(QWidget, ChessLogic):
         self.chessBoardBg.setPixmap(pixmap)
         for i in range(8):
             for j in range(8):
+                if self.chessGrid.itemAtPosition(i, j):
+                    self.chessGrid.itemAtPosition(i, j).widget().setParent(None)
                 if self.board[i][j] != 0:
                     self.chessGrid.addWidget(ChessPiece(self.board[i][j]), i, j)
                 else:
                     self.chessGrid.addWidget(ChessPiece(0), i, j)
         if self.time != 0:
             self.startTimer()
+    
     def endGame(self, winner):
+        if self.time != 0:
+            self.bTimer.stop()
+            self.wTimer.stop()
         dlg = SaveGameDialog(winner)
         if dlg.exec():
             path = QFileDialog.getExistingDirectory(
@@ -248,4 +276,5 @@ class ChessPage(QWidget, ChessLogic):
             game.headers['Date'] = str(datetime.date.today()).replace('-', '.')
             new_pgn = open(f'{path}/game.pgn', "w", encoding="utf-8")
             exporter = chess.pgn.FileExporter(new_pgn)
-            game.accept(exporter)
+            game.accept(exporter)   
+        sys.exit()

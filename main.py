@@ -1,9 +1,8 @@
 import sys
 from PyQt6 import uic
-from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QImage, QColor, QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QDialogButtonBox, QVBoxLayout, QLabel, QWidget, QPushButton, QDialog, QButtonGroup, QFileDialog
-from chesslogic import ChessLogic
+from PyQt6.QtWidgets import QApplication, QMainWindow,   QWidget
 from chesspage import ChessPage
 from gamespage import GamesPage
 
@@ -34,6 +33,7 @@ class Chess(QMainWindow):
         super().__init__()
         self.setCentralWidget(MainPage(self))
         self.resize(1000, 800)
+        self.setWindowTitle('Chess')
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Chess()

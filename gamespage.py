@@ -46,10 +46,13 @@ class GamesPage(QWidget):
             white_name = game.headers['White']
             black_name = game.headers['Black']
             p1 = game.headers['Result'].split('-')[0]
+            p2 = game.headers['Result'].split('-')[1]
             if p1 == '1':
                 winner = 'White'
-            else:
+            elif p2 == '1':
                 winner = 'Black'
+            elif p1 == '1/2':
+                winner = 'Draw'
             self.con.execute(f"""INSERT INTO chess(white, black, winner, datakeys, datavalues, moves) values("{white_name}", "{black_name}", "{winner}", "{':'.join(list(game.headers))}", "{':'.join(list(game.headers.values()))}", "{str(game.mainline_moves())}")""")
             game = chess.pgn.read_game(pgn)
         self.con.commit()
@@ -59,7 +62,7 @@ class GamesPage(QWidget):
         self.table.removeRow(self.table.currentRow())
         self.con.commit()
     def startGame(self):
-        moves = self.con.execute(f"""SELECT (moves) FROM chess WHERE id = {self.table.item(self.table.currentRow(), 3).text()}""").fetchall()
-        pgn = io.StringIO(moves[0][0])
+        moves = self.con.execute(f"""SELECT * FROM chess WHERE id = {self.table.item(self.table.currentRow(), 3).text()}""").fetchall()
+        pgn = io.StringIO(moves[0][6])
         game = chess.pgn.read_game(pgn)
-        self.MainWindow.setCentralWidget(ChessPage(0, game))
+        self.MainWindow.setCentralWidget(ChessPage(0, game, moves[0][3]))
