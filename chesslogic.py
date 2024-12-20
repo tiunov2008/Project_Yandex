@@ -29,6 +29,34 @@ class ChessLogic:
             x1 += j
             y1 += i
         return True
+    def isInDanger(self, i1, j1):
+        for i in range(8):
+            for j in range(8):
+                if self.canMove((j, i), (i1, j1)):
+                    return True
+        return False
+    def isCheckMate(self):
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] == 'Kb':
+                    Kb = (i, j)
+                if self.board[i][j] == 'Kw':
+                    Kw = (i, j)
+        print(self.isInDanger(*Kb))
+        if self.isInDanger(*Kb):
+            print('Шах черным')
+            for i in range(Kb[0] - 1, Kb[0] + 1):
+                for j in range(Kb[1] - 1, Kb[1] + 1):
+                    print(self.board[i][j])
+                    if not (self.board[i][j] != 0 and self.isInDanger(i, j)):
+                        return '+'
+            print('Шам и Мат черный')
+            self.endGame()
+            return '+'
+        if self.isInDanger(*Kw):
+            print('Шах белым')
+            return '+'
+        return ''
     def canMove(self, p1, p2):
         x1 = p1[1]
         y1 = p1[0]
